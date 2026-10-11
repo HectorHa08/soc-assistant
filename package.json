@@ -1,0 +1,7 @@
+{
+  "name": "soc-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intelligent SOC Assistant - LLM + RAG on Sysmon / MITRE ATT&CK (bge-m3 + Qwen3)",
+  "engines": { "node": ">=20" }
+}

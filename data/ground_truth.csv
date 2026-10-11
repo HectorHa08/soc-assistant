@@ -1,0 +1,20 @@
+query_id,query,expected_reference_id,expected_title,knowledge_type,exists_in_kb
+Q001,"Windows process creation event containing command line, hashes and ProcessGUID",Sysmon Event ID 1,Process creation,Sysmon Event,True
+Q002,Windows event that records TCP and UDP network connections made by processes,Sysmon Event ID 3,Network connection,Sysmon Event,True
+Q003,Windows event generated when a DLL or executable image is loaded into a process,Sysmon Event ID 7,Image loaded,Sysmon Event,True
+Q004,Windows event generated when one process opens another process for access,Sysmon Event ID 10,ProcessAccess,Sysmon Event,True
+Q005,Windows event that records when a file is created or overwritten,Sysmon Event ID 11,FileCreate,Sysmon Event,True
+Q006,Windows registry event for registry key or object creation and deletion,Sysmon Event ID 12,RegistryEvent (Object create and delete),Sysmon Event,True
+Q007,Windows registry event generated when a registry value is modified or set,Sysmon Event ID 13,RegistryEvent (Value Set),Sysmon Event,True
+Q008,Windows registry event generated when a registry key or value is renamed,Sysmon Event ID 14,RegistryEvent (Key and Value Rename),Sysmon Event,True
+Q009,Adversaries may abuse PowerShell commands and scripts to execute malicious code,T1059.001,PowerShell,MITRE ATT&CK Technique,True
+Q010,Adversaries may use Windows Command Shell such as cmd.exe to execute commands,T1059.003,Windows Command Shell,MITRE ATT&CK Technique,True
+Q011,Adversaries may create or modify Windows services to execute malicious programs,T1543.003,Windows Service,MITRE ATT&CK Technique,True
+Q012,Adversaries may create scheduled tasks on Windows for execution or persistence,T1053.005,Scheduled Task/Job: Scheduled Task,MITRE ATT&CK Technique,True
+Q013,Adversaries may inject malicious code into another running process,T1055,Process Injection,MITRE ATT&CK Technique,True
+Q014,Adversaries may dump credentials from the Windows Local Security Authority process memory,T1003.001,LSASS Memory,MITRE ATT&CK Technique,True
+Q016,Adversaries may obfuscate or encode files and information to make detection more difficult,T1027,Obfuscated Files or Information,MITRE ATT&CK Technique,True
+Q017,Adversaries may delete files and artifacts to remove evidence of their activity,T1070.004,File Deletion,MITRE ATT&CK Technique,True
+Q018,Adversaries may discover running processes on a compromised Windows system,T1057,Process Discovery,MITRE ATT&CK Technique,True
+Q019,Adversaries may gather information about the operating system and system configuration,T1082,System Information Discovery,MITRE ATT&CK Technique,True
+Q020,Adversaries may exploit a vulnerability in an Internet-facing system to gain initial access,T1190,Exploit Public-Facing Application,MITRE ATT&CK Technique,True

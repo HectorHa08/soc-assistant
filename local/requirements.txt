@@ -1,0 +1,6 @@
+numpy
+pandas
+sentence-transformers
+langchain-ollama
+streamlit
+# tùy chọn (chấm RAGAS, cần Python 3.12): ragas datasets
